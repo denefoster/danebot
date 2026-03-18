@@ -9,6 +9,8 @@ spec:
     spec:
       template:
         spec:
+          serviceAccount: {{ include "danebot.fullname" . }}
+          serviceAccountName: {{ include "danebot.fullname" . }}
           containers:
           - image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
             name: danebot

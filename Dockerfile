@@ -1,6 +1,7 @@
 FROM certbot/certbot
 
-RUN apk add --no-cache certbot certbot-dns-rfc2136 certbot-dns-cloudflare bash bind-tools
+RUN apk add --no-cache certbot certbot-dns-rfc2136 \
+    certbot-dns-cloudflare bash bind-tools curl
 
 COPY . /app
 
