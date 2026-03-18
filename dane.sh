@@ -241,6 +241,7 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}" ]; then
     echo "Please set DANEBOT_TOS_AGREE to yes to agree to the LetsEncrypt TOS"
     exit 1
   fi
+  initial_setup="1"
   if [ ${update_type} == "rfc2136" ]; then
     echo "dns_rfc2136_server = ${master}" >/etc/letsencrypt/dns.ini
     echo "dns_rfc2136_name = ${tsig_name}" >>/etc/letsencrypt/dns.ini
@@ -248,14 +249,18 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}" ]; then
     echo "dns_rfc2136_algorithm = ${tsig_algo^^}" >>/etc/letsencrypt/dns.ini
     echo "dns_rfc2136_port = 53" >>/etc/letsencrypt/dns.ini
     echo "dns_rfc2136_sign_query = false" >>/etc/letsencrypt/dns.ini
-  fi
-  initial_setup="1"
   echo "Requesting initial certs"
   /usr/bin/certbot certonly --reuse-key \
     --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
     --dns-rfc2136 -d ${domains_joined%,} \
     -n -m ${le_account_email} --agree-tos \
     --no-autorenew
+  elif [ ${update_type} == "cloudflare" ]; then
+  /usr/bin/certbot certonly --reuse-key \
+    --dns-cloudflare -d ${domains_joined%,} \
+    -n -m ${le_account_email} --agree-tos \
+    --no-autorenew
+  fi
   mkdir -p /etc/letsencrypt/current
   ln -s /etc/letsencrypt/live/${domains[0]} \
     /etc/letsencrypt/current/${domains[0]}
@@ -263,13 +268,22 @@ fi
 
 if [ ! -d "/etc/letsencrypt/live/${domains[0]}-duplicate" ]; then
   echo "Duplicating initial certs"
-  /usr/bin/certbot certonly --reuse-key \
-    --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
-    --dns-rfc2136 --duplicate \
-    --cert-name "${domains[0]}-duplicate" \
-    -d ${domains_joined%,} \
-    -n -m ${le_account_email} --agree-tos \
-    --no-autorenew
+  if [ ${update_type} == "rfc2136" ]; then
+    /usr/bin/certbot certonly --reuse-key \
+      --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
+      --dns-rfc2136 --duplicate \
+      --cert-name "${domains[0]}-duplicate" \
+      -d ${domains_joined%,} \
+      -n -m ${le_account_email} --agree-tos \
+      --no-autorenew
+  elif [ ${update_type} == "cloudflare" ]; then
+    /usr/bin/certbot certonly --reuse-key \
+      --dns-cloudflare --duplicate \
+      --cert-name "${domains[0]}-duplicate" \
+      -d ${domains_joined%,} \
+      -n -m ${le_account_email} --agree-tos \
+      --no-autorenew
+  fi
   mkdir -p /etc/letsencrypt/next
   ln -s /etc/letsencrypt/live/${domains[0]}-duplicate \
     /etc/letsencrypt/next/${domains[0]}
