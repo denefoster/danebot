@@ -251,7 +251,7 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}" ]; then
   fi
   initial_setup="1"
   echo "Requesting initial certs"
-  certbot certonly --reuse-key \
+  /usr/bin/certbot certonly --reuse-key \
     --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
     --dns-rfc2136 -d ${domains_joined%,} \
     -n -m ${le_account_email} --agree-tos \
@@ -263,7 +263,7 @@ fi
 
 if [ ! -d "/etc/letsencrypt/live/${domains[0]}-duplicate" ]; then
   echo "Duplicating initial certs"
-  certbot certonly --reuse-key \
+  /usr/bin/certbot certonly --reuse-key \
     --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
     --dns-rfc2136 --duplicate \
     --cert-name "${domains[0]}-duplicate" \
