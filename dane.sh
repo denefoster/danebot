@@ -337,7 +337,7 @@ else
   check_service ${cur_hash}
 
   # renew next before using
-  certbot renew --cert-name ${domains[0]}$next --force-renewal
+  /usr/bin/certbot renew --cert-name ${domains[0]}$next --force-renewal
 
   # get new cert hash for dns
   new_next_hash=$(openssl ec -in /etc/letsencrypt/next/${domains[0]}/privkey.pem -pubout -outform DER 2>/dev/null | sha256sum | awk '{print $1}')
