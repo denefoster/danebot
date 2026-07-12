@@ -256,12 +256,12 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}" ]; then
       --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
       --dns-rfc2136 -d ${domains_joined%,} \
       -n -m ${le_account_email} --agree-tos \
-      --no-autorenew
+      --no-autorenew --test-cert
   elif [ ${update_type} == "cloudflare" ]; then
     certbot certonly --reuse-key \
     --dns-cloudflare -d ${domains_joined%,} \
     -n -m ${le_account_email} --agree-tos \
-    --no-autorenew
+    --no-autorenew --test-cert
   fi
   mkdir -p /etc/letsencrypt/current
   ln -s /etc/letsencrypt/live/${domains[0]} \
@@ -277,14 +277,14 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}-duplicate" ]; then
       --cert-name "${domains[0]}-duplicate" \
       -d ${domains_joined%,} \
       -n -m ${le_account_email} --agree-tos \
-      --no-autorenew
+      --no-autorenew --test-cert
   elif [ ${update_type} == "cloudflare" ]; then
     certbot certonly --reuse-key \
       --dns-cloudflare --duplicate \
       --cert-name "${domains[0]}-duplicate" \
       -d ${domains_joined%,} \
       -n -m ${le_account_email} --agree-tos \
-      --no-autorenew
+      --no-autorenew --test-cert
   fi
   mkdir -p /etc/letsencrypt/next
   ln -s /etc/letsencrypt/live/${domains[0]}-duplicate \
@@ -337,7 +337,7 @@ else
   check_service ${cur_hash}
 
   # renew next before using
-  certbot renew --cert-name ${domains[0]}$next --force-renewal
+  certbot renew --cert-name ${domains[0]}$next --force-renewal --test-cert
 
   # get new cert hash for dns
   new_next_hash=$(openssl ec -in /etc/letsencrypt/next/${domains[0]}/privkey.pem -pubout -outform DER 2>/dev/null | sha256sum | awk '{print $1}')
