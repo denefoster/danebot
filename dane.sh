@@ -62,44 +62,43 @@ rfc2136_remove() {
 
 cloudflare_update() {
   echo "Getting Zone ID for domain"
+  cf_domain=`tldextract ${2} | cut -d' ' -f2- | sed s/\ /./`
+  echo "CF Domain if ${cf_domain}"
 
   zone_id=`curl -X GET "https://api.cloudflare.com/client/v4/zones" \
     --fail --silent --show-error \
     -H "Authorization: Bearer ${cf_token}" \
     -H "Content-Type: application/json" | \
-    jq --arg ZONE "${2}" '.result[] | (select(.name == $ZONE)) | .id' | tr -d '"'`
+    jq --arg ZONE "${cf_domain}" '.result[] | (select(.name == $ZONE)) | .id' | tr -d '"'`
 
   echo "Zone ID is ${zone_id}"
 
-  echo "checking for existing records"
+  echo "checking for existing records with hash ${3}"
   existing_record=`curl https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records \
     --fail --silent --show-error \
     -H "Authorization: Bearer ${cf_token}" | \
     jq '.result[] | (select(.type=="TLSA" and .content=="3 1 1 '"${3}"'")) | .id' | tr -d '"'`
 
-  if [ -z ${existing_record+x} ]; then
-    echo 'no record found creating TLSA record...'
-    curl -X POST https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records \
-      --fail --silent --show-error \
-      -H 'Content-Type: application/json' \
-      -H "Authorization: Bearer ${cf_token}" \
-      -d '{
-      "content": "3 1 1 '"${3}"'",
-      "data": {
-      "certificate": "'"${3}"'",
-        "matching_type": 1,
-        "selector": 1,
-        "usage": 3
-      },
-      "name": "'"_${1}._tcp.${2}."'",
-      "type": "TLSA"
-    }'
+  echo "${existing_record}"
 
-    echo "Done."
-  else
-    echo "existing record found with id ${existing_record}, nothing needed"
-    echo "Done."
-  fi
+  echo 'Trying to create TLSA record...'
+  curl -X POST https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records \
+    --fail --silent --show-error \
+    -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer ${cf_token}" \
+    -d '{
+    "content": "3 1 1 '"${3}"'",
+    "data": {
+    "certificate": "'"${3}"'",
+      "matching_type": 1,
+      "selector": 1,
+      "usage": 3
+    },
+    "name": "'"_${1}._tcp.${2}."'",
+    "type": "TLSA"
+  }'
+
+  echo "Done."
 }
 
 restart_k8s_deployment() {
@@ -235,7 +234,7 @@ if [ ${update_type} == "rfc2136" ]; then
     echo "dns_rfc2136_sign_query = false" >>/etc/letsencrypt/dns.ini
   fi
 elif [ ${update_type} == "cloudflare" ]; then
-  if [ -z ${DANEBOT_CFTOKEN+x} ]; then
+  if [ -z ${cf_token+x} ]; then
     echo "Cloudflare updates need DANEBOT_CFTOKEN set"
     exit 1
   fi
