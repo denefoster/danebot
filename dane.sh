@@ -69,6 +69,8 @@ cloudflare_update() {
     -H "Content-Type: application/json" | \
     jq --arg ZONE "${2}" '.result[] | (select(.name == $ZONE)) | .id' | tr -d '"'`
 
+  echo "Zone ID is ${zone_id}"
+
   echo "checking for existing records"
   existing_record=`curl https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records \
     --fail --silent --show-error \
@@ -237,6 +239,9 @@ elif [ ${update_type} == "cloudflare" ]; then
     echo "Cloudflare updates need DANEBOT_CFTOKEN set"
     exit 1
   fi
+  if [ ! -f "/etc/letsencrypt/cf.ini" ]; then
+    echo "dns_cloudflare_api_token = ${cf_token}" >>/etc/letsencrypt/cf.ini
+  fi
 fi
 
 # Fetch inital certs if none exist for our domain set
@@ -259,6 +264,7 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}" ]; then
       --no-autorenew --test-cert
   elif [ ${update_type} == "cloudflare" ]; then
     certbot certonly --reuse-key \
+    --dns-cloudflare-credentials /etc/letsencrypt/cf.ini \
     --dns-cloudflare -d ${domains_joined%,} \
     -n -m ${le_account_email} --agree-tos \
     --no-autorenew --test-cert
@@ -280,6 +286,7 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}-duplicate" ]; then
       --no-autorenew --test-cert
   elif [ ${update_type} == "cloudflare" ]; then
     certbot certonly --reuse-key \
+      --dns-cloudflare-credentials /etc/letsencrypt/cf.ini \
       --dns-cloudflare --duplicate \
       --cert-name "${domains[0]}-duplicate" \
       -d ${domains_joined%,} \
