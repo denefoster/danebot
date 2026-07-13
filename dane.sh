@@ -53,7 +53,6 @@ sytemd_reload_type=${DANEBOT_SYSTEMD_RELOAD_TYPE:-reload}
 
 
 rfc2136_update() {
-  echo "server ${master}\nupdate add _${1}._tcp.${2}. ${ttl} TLSA 3 1 1 ${3}\nsend"
   printf "server ${master}\nupdate add _${1}._tcp.${2}. ${ttl} TLSA 3 1 1 ${3}\nsend" | nsupdate -y "${tsig_algo}:${tsig_name}:${tsig_secret}"
 }
 
@@ -293,7 +292,6 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}-duplicate" ]; then
 fi
 
 # gather some initial info
-print "domains are $domains"
 cur_hash=$(openssl ec -in /etc/letsencrypt/current/${domains[0]}/privkey.pem -pubout -outform DER 2>/dev/null | sha256sum | awk '{print $1}')
 next_hash=$(openssl ec -in /etc/letsencrypt/next/${domains[0]}/privkey.pem -pubout -outform DER 2>/dev/null | sha256sum | awk '{print $1}')
 
