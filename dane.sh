@@ -53,6 +53,7 @@ sytemd_reload_type=${DANEBOT_SYSTEMD_RELOAD_TYPE:-reload}
 
 
 rfc2136_update() {
+  echo "server ${master}\nupdate add _${1}._tcp.${2}. ${ttl} TLSA 3 1 1 ${3}\nsend"
   printf "server ${master}\nupdate add _${1}._tcp.${2}. ${ttl} TLSA 3 1 1 ${3}\nsend" | nsupdate -y "${tsig_algo}:${tsig_name}:${tsig_secret}"
 }
 
@@ -299,6 +300,8 @@ if [[ ${initial_setup} == "1" ]]; then
   echo "Starting DANE setup for ${domains[@]}"
 
   echo "Adding hashes to DNS"
+  echo "Current hash is ${cur_hash}"
+  echo "Next hash is ${next_hash}"
   update_dns ${cur_hash}
   update_dns ${next_hash}
   echo "Waiting dns_prop_delay of ${dns_prop_delay} before checking DNS"
